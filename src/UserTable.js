@@ -50,7 +50,7 @@ const UserTable = () => {
 
   const columns = [
     { title: "Name", dataIndex: "name", key: "name" },
-    { title: "UID", dataIndex: "uid", key: "uid" },
+
     {
       title: "Total Points",
       dataIndex: "points",
@@ -88,7 +88,9 @@ const UserTable = () => {
   ];
 
   return (
-    <>
+    <div className="table-container">
+      {" "}
+      {/* Add this wrapper div */}
       <Table columns={columns} dataSource={users} rowKey="uid" />
       {modalVisible && (
         <PerformanceModal
@@ -98,7 +100,7 @@ const UserTable = () => {
           selectedDate={selectedDate}
         />
       )}
-    </>
+    </div>
   );
 };
 
