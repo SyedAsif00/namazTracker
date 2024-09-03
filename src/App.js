@@ -1,25 +1,32 @@
-import logo from './logo.svg';
-import './App.css';
+// src/App.js
+import React, { useState, useEffect } from "react";
+import GoogleLoginButton from "./LoginBtn";
+import UserTable from "./UserTable";
+import { auth } from "./firebase.config"; // Import the auth instance
 
-function App() {
+const App = () => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Listen for changes to the user's login state
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUser(user); // User is logged in
+      } else {
+        setUser(null); // User is logged out
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <h1>Namaz Tracker</h1>
+      {!user ? <GoogleLoginButton setUser={setUser} /> : <UserTable />}
     </div>
   );
-}
+};
 
 export default App;
