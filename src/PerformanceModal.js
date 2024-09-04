@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { Modal, Table } from "antd";
-import { getFirestore, doc, updateDoc } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import { Modal, Table, Radio, message } from "antd";
+import { getFirestore, doc, updateDoc, getDoc } from "firebase/firestore";
 import { app } from "./firebase.config";
 
 const db = getFirestore(app);
@@ -13,6 +13,32 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
     Maghrib: "",
     Isha: "",
   });
+
+  useEffect(() => {
+    const fetchPerformance = async () => {
+      if (user && selectedDate) {
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          const performanceData = userData.performance || {};
+          setNamazData(
+            performanceData[selectedDate] || {
+              Fajr: "",
+              Zuhr: "",
+              Asr: "",
+              Maghrib: "",
+              Isha: "",
+            }
+          );
+        }
+      }
+    };
+
+    if (visible) {
+      fetchPerformance();
+    }
+  }, [user, selectedDate, visible]);
 
   const calculatePoints = (namazPerformance) => {
     let totalPoints = 0;
@@ -36,17 +62,47 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
     });
     return totalPoints;
   };
-
   const handleSave = async () => {
-    const dayPoints = calculatePoints(namazData);
-    const updatedPoints = (user.points || 0) + dayPoints;
+    // Calculate new points based on the updated namaz data
+    const newDayPoints = calculatePoints(namazData);
 
-    await updateDoc(doc(db, "users", user.uid), {
-      [`performance.${selectedDate}`]: { ...namazData, points: dayPoints },
+    // Fetch the previous points for the selected date if they exist
+    const docRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(docRef);
+    let previousDayPoints = 0;
+
+    if (docSnap.exists()) {
+      const userData = docSnap.data();
+      if (userData.performance && userData.performance[selectedDate]) {
+        previousDayPoints = userData.performance[selectedDate].points || 0;
+      }
+    }
+
+    // Calculate the updated total points
+    const updatedPoints = (user.points || 0) - previousDayPoints + newDayPoints;
+
+    // Update Firestore with the new performance data and adjusted points
+    await updateDoc(docRef, {
+      [`performance.${selectedDate}`]: { ...namazData, points: newDayPoints },
       points: updatedPoints,
     });
 
     onClose();
+  };
+
+  const handleRadioChange = (namaz, value) => {
+    if (namazData[namaz] && namazData[namaz] !== value) {
+      Modal.confirm({
+        title: "Update Confirmation",
+        content: "Do you really want to update the previous record?",
+        onOk: () => {
+          setNamazData({ ...namazData, [namaz]: value });
+          message.success("Record updated successfully.");
+        },
+      });
+    } else {
+      setNamazData({ ...namazData, [namaz]: value });
+    }
   };
 
   const columns = [
@@ -56,12 +112,9 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
       dataIndex: "mosque",
       key: "mosque",
       render: (_, record) => (
-        <input
-          type="radio"
+        <Radio
           checked={namazData[record.namaz] === "At Mosque"}
-          onChange={() =>
-            setNamazData({ ...namazData, [record.namaz]: "At Mosque" })
-          }
+          onChange={() => handleRadioChange(record.namaz, "At Mosque")}
         />
       ),
     },
@@ -70,12 +123,9 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
       dataIndex: "home",
       key: "home",
       render: (_, record) => (
-        <input
-          type="radio"
+        <Radio
           checked={namazData[record.namaz] === "At Home"}
-          onChange={() =>
-            setNamazData({ ...namazData, [record.namaz]: "At Home" })
-          }
+          onChange={() => handleRadioChange(record.namaz, "At Home")}
         />
       ),
     },
@@ -84,12 +134,9 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
       dataIndex: "qaza",
       key: "qaza",
       render: (_, record) => (
-        <input
-          type="radio"
+        <Radio
           checked={namazData[record.namaz] === "Qaza"}
-          onChange={() =>
-            setNamazData({ ...namazData, [record.namaz]: "Qaza" })
-          }
+          onChange={() => handleRadioChange(record.namaz, "Qaza")}
         />
       ),
     },
@@ -98,12 +145,9 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
       dataIndex: "notPrayed",
       key: "notPrayed",
       render: (_, record) => (
-        <input
-          type="radio"
+        <Radio
           checked={namazData[record.namaz] === "Not Prayed"}
-          onChange={() =>
-            setNamazData({ ...namazData, [record.namaz]: "Not Prayed" })
-          }
+          onChange={() => handleRadioChange(record.namaz, "Not Prayed")}
         />
       ),
     },
@@ -122,7 +166,7 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
       visible={visible}
       onCancel={onClose}
       onOk={handleSave}
-      title="Add Record"
+      title="Update Performance"
     >
       <Table columns={columns} dataSource={data} pagination={false} />
     </Modal>

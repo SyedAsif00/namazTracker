@@ -106,3 +106,17 @@ h1 {
 .audio-button.active {
   animation: none; /* Disable animation when active */
 }
+/* App.css */
+.logout-button {
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background-color: #d32f2f;
+}

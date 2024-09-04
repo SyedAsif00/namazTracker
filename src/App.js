@@ -25,10 +25,26 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleLogout = () => {
+    auth
+      .signOut()
+      .then(() => {
+        setUser(null); // Reset user state on sign out
+      })
+      .catch((error) => {
+        console.error("Error signing out: ", error);
+      });
+  };
+
   return (
     <div>
       {user && (
-        <div className="user-info">Logged in as: {user.displayName}</div>
+        <div className="user-info">
+          Logged in as: {user.displayName}
+          <button onClick={handleLogout} className="logout-button">
+            Logout
+          </button>
+        </div>
       )}
       <AudioPlayer /> {/* Include the audio player */}
       <RotatingAyah /> {/* Include the rotating Ayah display */}
