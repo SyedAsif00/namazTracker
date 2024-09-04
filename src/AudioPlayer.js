@@ -1,9 +1,7 @@
-// src/AudioPlayer.js
 import React, { useState, useRef, useEffect } from "react";
 
-// Use an absolute path from the public directory
 const lectures = [
-  "../public/audios/Namaz Parhna Kun Zaroori Hai  Bayan By  Maulana Tariq Jameel 2024.mp3",
+  process.env.PUBLIC_URL + "/audios/audio.mp3", // Use PUBLIC_URL for proper path resolution
   // Add more paths if needed
 ];
 
@@ -37,6 +35,9 @@ const AudioPlayer = () => {
   useEffect(() => {
     audioRef.current.src = lectures[currentLecture];
     audioRef.current.onended = handleEnd;
+    audioRef.current.onerror = (e) => {
+      console.error("Error loading audio file:", e);
+    };
   }, [currentLecture]);
 
   return (

@@ -1,25 +1,24 @@
-/* src/App.css */
-
 body {
   background-image: url("./images/pexels-movoyagee-1264169-2449510.jpg"); /* Path to your background image */
-  background-size: cover; /* Cover the entire page */
-  background-attachment: fixed; /* Background image stays fixed during scroll */
-  background-repeat: no-repeat; /* Prevents repeating the image */
-  background-position: center; /* Center the background image */
-  color: white; /* Adjust text color for visibility on dark backgrounds */
+  background-size: cover;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: center;
+  color: white;
 }
 
 .user-info {
-  position: absolute; /* Position at the top left corner */
+  position: absolute;
   top: 10px;
   left: 20px;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-  color: white; /* Text color */
-  padding: 5px 10px; /* Padding around the text */
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 5px 10px;
   border-radius: 5px; /* Rounded corners */
   font-weight: bold; /* Make the text bold */
 }
 
+/* Ayah Arabic text */
 .ayah-arabic {
   font-family: "Amiri", serif; /* Use Amiri font for Arabic calligraphy effect */
   text-align: center; /* Center align the text */
@@ -39,11 +38,13 @@ body {
   margin-right: auto;
 }
 
+/* Ayah reference text */
 .ayah-reference {
   font-size: 16px; /* Smaller font size for the reference */
   color: #f0f0f0; /* Slightly lighter color for the reference */
 }
 
+/* Table container */
 .table-container {
   background-color: rgba(
     255,
@@ -62,22 +63,46 @@ body {
   background: transparent; /* Make the inner table transparent */
 }
 
+/* Heading */
 h1 {
   color: white; /* Ensure the header is visible */
   text-align: center;
   padding-top: 20px;
 }
 
+/* Audio player position and animation */
 .audio-player {
-  position: absolute; /* Position at the top right corner */
-  top: 10px;
-  right: 20px;
+  position: fixed; /* Fixed position for consistent placement */
+  bottom: 20px; /* Move to the bottom */
+  right: 20px; /* Align to the right */
+  display: flex; /* Flex for content centering */
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
+  transition: transform 0.3s ease-in-out; /* Smooth transition */
 }
 
+/* Button styling */
 .audio-button {
   background: none;
   border: none;
   color: white;
-  font-size: 24px;
+  font-size: 44px;
   cursor: pointer;
+  animation: scaleAnimation 1.5s infinite ease-in-out; /* Animation when not playing */
+}
+
+/* Keyframes for scaling animation */
+@keyframes scaleAnimation {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2); /* Scale up */
+  }
+}
+
+/* Active state to stop animation */
+.audio-button.active {
+  animation: none; /* Disable animation when active */
 }
