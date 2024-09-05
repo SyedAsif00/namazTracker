@@ -6,10 +6,12 @@ import HadithDisplay from "./HadithDisplay";
 import RotatingAyah from "./RotatingAyah";
 import AudioPlayer from "./AudioPlayer";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { Modal, Spin } from "antd"; // Import Modal and Spin from Ant Design
 import "./App.css";
 
 const App = () => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // State for loading
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -39,6 +41,7 @@ const App = () => {
       } else {
         setUser(null);
       }
+      setLoading(false); // Set loading to false after checking authentication status
     });
 
     return () => unsubscribe();
@@ -55,20 +58,60 @@ const App = () => {
       });
   };
 
+  const showLogoutConfirm = () => {
+    Modal.confirm({
+      title: "Are you sure you want to logout?",
+      okText: "Yes",
+      okType: "danger",
+      cancelText: "No",
+      onOk() {
+        handleLogout(); // Call the logout function if the user confirms
+      },
+      onCancel() {
+        console.log("Logout canceled");
+      },
+    });
+  };
+
   return (
     <div>
-      {user && (
-        <div className="user-info">
-          Logged in as: {user.displayName}
-          <button onClick={handleLogout} className="logout-button">
-            Logout
-          </button>
+      {loading ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          <Spin size="large" /> {/* Loader when the app is loading */}
         </div>
+      ) : (
+        <>
+          <div className="header-container">
+            <h1>Namaz Tracker</h1>
+            {user ? (
+              <div className="user-info">
+                Logged in as: {user.displayName}
+                <button onClick={showLogoutConfirm} className="logout-button">
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="login-info">
+                {" "}
+                {/* Container for the login button */}
+                <GoogleLoginButton setUser={setUser} />
+              </div>
+            )}
+          </div>
+
+          <AudioPlayer />
+          <RotatingAyah />
+          {/* Always show the UserTable */}
+          <UserTable user={user} />
+        </>
       )}
-      <AudioPlayer />
-      <RotatingAyah />
-      <h1>Namaz Tracker</h1>
-      {!user ? <GoogleLoginButton setUser={setUser} /> : <UserTable />}
     </div>
   );
 };

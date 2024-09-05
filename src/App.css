@@ -6,7 +6,66 @@ body {
   background-position: center;
   color: white;
 }
+/* Base styles for the header */
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
 
+  color: white;
+}
+
+/* Make h1 larger by default */
+h1 {
+  font-size: 2em; /* Larger font size for bigger screens */
+  margin: 0; /* Remove default margin */
+}
+
+/* Styles for user info container */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Logout button styling */
+.logout-button {
+  padding: 5px 10px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+  background-color: #d32f2f;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 600px) {
+  .header-container {
+    flex-direction: column; /* Stack items vertically on small screens */
+    align-items: flex-start; /* Align items to the start of the container */
+  }
+
+  h1 {
+    font-size: 1.5em; /* Reduce font size for smaller screens */
+  }
+
+  .user-info {
+    margin-top: 10px; /* Add margin on top to separate from the header */
+  }
+
+  .logout-button {
+    padding: 3px 8px; /* Reduce padding for smaller screens */
+    font-size: 0.8em; /* Reduce font size for the button text */
+  }
+}
+
+/* 
 .user-info {
   position: absolute;
   top: 10px;
@@ -14,9 +73,9 @@ body {
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
   padding: 5px 10px;
-  border-radius: 5px; /* Rounded corners */
-  font-weight: bold; /* Make the text bold */
-}
+  border-radius: 5px;
+  font-weight: bold;
+} */
 
 /* Ayah Arabic text */
 .ayah-arabic {
@@ -46,19 +105,18 @@ body {
 
 /* Table container */
 .table-container {
-  background-color: rgba(
-    255,
-    255,
-    255,
-    0.8
-  ); /* Soft white with slight transparency */
   border-radius: 15px; /* More rounded corners for a softer look */
   padding: 20px; /* Add some padding for spacing */
   margin: 30px auto; /* Center the table with more space */
   max-width: 90%; /* Limit the max width of the table */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
 }
-
+@media (max-width: 580px) {
+  .table-container {
+    max-width: 100%;
+    padding: 0;
+  }
+}
 .ant-table {
   background: transparent; /* Make the inner table transparent */
 }
