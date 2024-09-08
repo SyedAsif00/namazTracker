@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Spin, DatePicker } from "antd"; // Import DatePicker
+import { Table, Button, Spin } from "antd"; // Import necessary Ant Design components
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
 import { app } from "./firebase.config";
 import PerformanceModal from "./PerformanceModal";
@@ -8,14 +8,13 @@ import moment from "moment"; // Import moment for date handling
 
 const db = getFirestore(app);
 
-const UserTable = ({ user }) => {
+const UserTable = ({ user, selectedMonth }) => {
   const [users, setUsers] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(moment()); // This initializes to the current month
   const [loading, setLoading] = useState(true);
-  const [showAllDates, setShowAllDates] = useState(false); // State for toggling dates display
+  const [showAllDates, setShowAllDates] = useState(false);
 
   useEffect(() => {
     const usersCollection = collection(db, "users");
@@ -46,7 +45,6 @@ const UserTable = ({ user }) => {
     const today = moment();
     const startOfMonth = month.startOf("month");
 
-    // If the selected month is the current month, limit to today
     const isCurrentMonth = month.isSame(today, "month");
     const endOfMonth = isCurrentMonth ? today : month.endOf("month");
 
@@ -58,18 +56,10 @@ const UserTable = ({ user }) => {
       day = day.add(1, "day");
     }
 
-    // Sort the dates in descending order (most recent first)
     return days.sort((a, b) => (moment(a).isBefore(moment(b)) ? 1 : -1));
   };
 
-  const handleMonthChange = (date) => {
-    if (date && date.isBefore(moment().endOf("month"))) {
-      // Ensure no future months are selected
-      setSelectedMonth(date); // Update selected month
-    }
-  };
-
-  const daysInSelectedMonth = getDaysInMonth(selectedMonth);
+  const daysInSelectedMonth = getDaysInMonth(selectedMonth); // Use selectedMonth passed as a prop
 
   // Determine how many dates to display based on showAllDates state
   const displayedDates = showAllDates
@@ -81,9 +71,8 @@ const UserTable = ({ user }) => {
       title: "Date",
       dataIndex: "date",
       key: "date",
-      width: 50,
+      width: 100,
       fixed: "left", // Fix this column to the left
-
       render: (text) => (
         <strong>{moment(text).format("D MMM YYYY")}</strong> // Format the date and make it bold
       ),
@@ -95,7 +84,7 @@ const UserTable = ({ user }) => {
         </div>
       ),
       key: user.id,
-      width: 100,
+      width: 120,
       render: (_, record) => {
         const performance = user.performance[record.date];
         const dayPoints = performance ? performance.points : 0;
@@ -139,23 +128,12 @@ const UserTable = ({ user }) => {
         </div>
       ) : (
         <>
-          {/* Month picker added here */}
-          <DatePicker
-            style={{ marginBottom: "20px" }}
-            onChange={handleMonthChange}
-            picker="month"
-            value={selectedMonth} // Bind to the selected month state
-            disabledDate={(current) =>
-              current && current > moment().endOf("month")
-            } // Disable future months
-          />
-
           <Table
             columns={columns}
             dataSource={data}
             rowKey="date"
             pagination={false}
-            scroll={{ x: 850 }}
+            scroll={{ x: 850 }} // Enable horizontal scroll
           />
 
           {/* Show More/Show Less Button */}

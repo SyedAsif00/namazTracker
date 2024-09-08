@@ -2,16 +2,17 @@ import React, { useState, useEffect } from "react";
 import GoogleLoginButton from "./LoginBtn";
 import UserTable from "./UserTable";
 import { auth, db } from "./firebase.config";
-import HadithDisplay from "./HadithDisplay";
-import RotatingAyah from "./RotatingAyah";
-import AudioPlayer from "./AudioPlayer";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { Modal, Spin } from "antd"; // Import Modal and Spin from Ant Design
-import "./App.css";
+import { Modal, Spin, DatePicker } from "antd"; // Import DatePicker here
+import moment from "moment"; // Import moment for formatting months
+import AudioPlayer from "./AudioPlayer";
+import RotatingAyah from "./RotatingAyah.js";
+import "./App.css"; // Assuming styles are in this file
 
 const App = () => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // State for loading
+  const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(moment()); // Track selected month
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -41,7 +42,7 @@ const App = () => {
       } else {
         setUser(null);
       }
-      setLoading(false); // Set loading to false after checking authentication status
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -65,12 +66,18 @@ const App = () => {
       okType: "danger",
       cancelText: "No",
       onOk() {
-        handleLogout(); // Call the logout function if the user confirms
+        handleLogout();
       },
       onCancel() {
         console.log("Logout canceled");
       },
     });
+  };
+
+  const handleMonthChange = (date) => {
+    if (date) {
+      setSelectedMonth(date); // Update the selected month
+    }
   };
 
   return (
@@ -84,32 +91,68 @@ const App = () => {
             height: "100vh",
           }}
         >
-          <Spin size="large" /> {/* Loader when the app is loading */}
+          <Spin size="large" />
         </div>
       ) : (
         <>
-          <div className="header-container">
-            <h1>Namaz Tracker</h1>
+          <div
+            className="header-container"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "20px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <h1 style={{ marginRight: "20px", padding: 0 }}>Namaz Tracker</h1>
+              {/* DatePicker next to the heading */}
+              <DatePicker
+                style={{
+                  marginLeft: "10px",
+                  borderRadius: "5px",
+                  padding: "6px",
+                  fontSize: "16px",
+                }}
+                picker="month"
+                format="MMM YYYY" // Format to display "Sep" for September
+                value={selectedMonth} // Bind to selected month state
+                onChange={handleMonthChange}
+                disabledDate={(current) =>
+                  current && current > moment().endOf("month")
+                }
+              />
+            </div>
             {user ? (
               <div className="user-info">
                 Logged in as: {user.displayName}
-                <button onClick={showLogoutConfirm} className="logout-button">
+                <button
+                  onClick={showLogoutConfirm}
+                  className="logout-button"
+                  style={{
+                    backgroundColor: "#ff4d4f",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "5px",
+                    padding: "8px 12px",
+                    cursor: "pointer",
+                    marginLeft: "20px",
+                  }}
+                >
                   Logout
                 </button>
               </div>
             ) : (
               <div className="login-info">
-                {" "}
-                {/* Container for the login button */}
                 <GoogleLoginButton setUser={setUser} />
               </div>
             )}
           </div>
-
           <AudioPlayer />
           <RotatingAyah />
           {/* Always show the UserTable */}
-          <UserTable user={user} />
+          <UserTable user={user} selectedMonth={selectedMonth} />{" "}
+          {/* Pass selectedMonth as prop */}
         </>
       )}
     </div>
