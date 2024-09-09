@@ -14,15 +14,21 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
     Maghrib: "",
     Isha: "",
   });
-
+  // loading the performance date here, selected date PROP from userTable, this day or before any date which is selected in the table,
   useEffect(() => {
     const fetchPerformance = async () => {
+      // user is truthy and date is selected and truthy
       if (user && selectedDate) {
+        // reference to a user doc
         const docRef = doc(db, "users", user.uid);
+        // getting the ref doc
         const docSnap = await getDoc(docRef);
+        // if it exists ?
         if (docSnap.exists()) {
           const userData = docSnap.data();
+          // retreive the perf object, if not there, intialize it as empty object with no values first
           const performanceData = userData.performance || {};
+          // setter function is called, so they can be updated.
           setNamazData(
             performanceData[selectedDate] || {
               Fajr: "",

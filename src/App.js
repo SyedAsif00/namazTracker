@@ -20,11 +20,13 @@ const App = () => {
   const calendarRef = useRef(null); // Ref to handle outside clicks
 
   useEffect(() => {
+    //on authstatechanged is a function uses a callback > triggered when authentication state of a user changes, on any state change > if a user exist already , using it's UID we only get the user
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         const userDocRef = doc(db, "users", user.uid);
+        // getting the user here
         const userDocSnap = await getDoc(userDocRef);
-
+        // here if this function is triggered with a already exsting user > then we use setDOC method, this creates a new user with the properties in a object,
         if (!userDocSnap.exists()) {
           await setDoc(userDocRef, {
             uid: user.uid,
@@ -36,6 +38,7 @@ const App = () => {
           });
         } else {
           if (!userDocSnap.data().registrationDate) {
+            // if a user does not have a reg date then provide one.
             await setDoc(
               userDocRef,
               { registrationDate: new Date().toISOString().split("T")[0] },
@@ -57,6 +60,7 @@ const App = () => {
     auth
       .signOut()
       .then(() => {
+        // the user object stores information about the current logged user, not all of them, upon loggout > the use state is nullified,
         setUser(null);
       })
       .catch((error) => {

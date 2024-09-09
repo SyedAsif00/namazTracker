@@ -21,10 +21,14 @@ const UserTable = ({ user, selectedMonth }) => {
     const usersCollection = collection(db, "users");
 
     const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
+      //snapshot function updated in real time, if there is any remove or add in the userList
       const usersList = snapshot.docs.map((doc) => {
         const data = doc.data();
 
         // Ensure we include days even if points are 0
+        // performance object stores the namaz record, it has it's key which is the date at which the record is present. we say data.performance is truthy, if not we or empty object is used to manage erros
+        // day is the key for the perforance of that day,
+        // here we obtain the amount of days present for which the perfromance is there.
         const daysWithRecords = Object.keys(data.performance || {}).filter(
           (day) => data.performance[day] !== undefined
         ).length;
@@ -46,7 +50,7 @@ const UserTable = ({ user, selectedMonth }) => {
           isCurrentUser: user && user.uid === doc.id,
         };
       });
-
+      //the sort function is used, to order the users, -1 comes first then 1. this way...
       usersList.sort((a, b) => (a.isCurrentUser ? -1 : 1));
 
       setUsers(usersList);
