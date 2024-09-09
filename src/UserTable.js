@@ -23,10 +23,24 @@ const UserTable = ({ user, selectedMonth }) => {
     const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
       const usersList = snapshot.docs.map((doc) => {
         const data = doc.data();
+
+        // Ensure we include days even if points are 0
+        const daysWithRecords = Object.keys(data.performance || {}).filter(
+          (day) => data.performance[day] !== undefined
+        ).length;
+
+        const maxPointsForUser = daysWithRecords * 10; // Max points based on the number of logged days
+        const totalPoints = data.points !== undefined ? data.points : 0;
+        const normalizedPoints =
+          maxPointsForUser > 0
+            ? Math.round((totalPoints / maxPointsForUser) * 10) // Normalize and round to the nearest whole number
+            : 0;
+
         return {
           id: doc.id,
           ...data,
-          points: data.points !== undefined ? data.points : 0,
+          points: totalPoints,
+          normalizedPoints: normalizedPoints, // Add the normalized points
           performance: data.performance || {},
           registrationDate: data.registrationDate || "",
           isCurrentUser: user && user.uid === doc.id,
@@ -81,7 +95,7 @@ const UserTable = ({ user, selectedMonth }) => {
     ...users.map((user) => ({
       title: (
         <div>
-          {user.name} ({user.points})
+          {user.name} ({user.normalizedPoints}){" "}
         </div>
       ),
       key: user.id,
