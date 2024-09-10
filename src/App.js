@@ -2,19 +2,43 @@
 import React, { useState, useEffect } from "react";
 import GoogleLoginButton from "./LoginBtn";
 import UserTable from "./UserTable";
-import { auth } from "./firebase.config";
+import { auth, db } from "./firebase.config"; // Import db for Firestore access
 import HadithDisplay from "./HadithDisplay";
 import RotatingAyah from "./RotatingAyah";
-import AudioPlayer from "./AudioPlayer"; // Import the AudioPlayer component
-import "./App.css"; // Ensure your CSS file is linked
+import AudioPlayer from "./AudioPlayer";
+import { doc, getDoc, setDoc } from "firebase/firestore"; // Import Firestore methods
+import "./App.css";
 
 const App = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     // Listen for changes to the user's login state
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+          // If user document doesn't exist, create one with registrationDate
+          await setDoc(userDocRef, {
+            uid: user.uid,
+            email: user.email,
+            name: user.displayName,
+            photoURL: user.photoURL,
+            registrationDate: new Date().toISOString().split("T")[0], // Set registration date to today
+            lastLogin: new Date().toISOString(), // Optional: track last login time
+          });
+        } else {
+          // If user document exists but registrationDate does not, set it
+          if (!userDocSnap.data().registrationDate) {
+            await setDoc(
+              userDocRef,
+              { registrationDate: new Date().toISOString().split("T")[0] },
+              { merge: true }
+            );
+          }
+        }
         setUser(user); // User is logged in
       } else {
         setUser(null); // User is logged out
@@ -46,11 +70,11 @@ const App = () => {
           </button>
         </div>
       )}
-      <AudioPlayer /> {/* Include the audio player */}
-      <RotatingAyah /> {/* Include the rotating Ayah display */}
+      <AudioPlayer />
+      <RotatingAyah />
       <h1>Namaz Tracker</h1>
       {!user ? <GoogleLoginButton setUser={setUser} /> : <UserTable />}
-      <HadithDisplay /> {/* Include the Hadith display */}
+      {/* <HadithDisplay /> */}
     </div>
   );
 };

@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Table } from "antd";
+import { Table, Button } from "antd";
 import { getFirestore, collection, onSnapshot } from "firebase/firestore";
 import { app } from "./firebase.config";
-import PerformanceModal from "./PerformanceModal"; // Import the modal component
+import PerformanceModal from "./PerformanceModal";
 import { auth } from "./firebase.config";
 
 const db = getFirestore(app);
 
 const UserTable = () => {
   const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
+  const [showAllDates, setShowAllDates] = useState(false);
 
   useEffect(() => {
     const usersCollection = collection(db, "users");
@@ -23,10 +24,16 @@ const UserTable = () => {
         return {
           id: doc.id,
           ...data,
-          points: data.points !== undefined ? data.points : 0, // Initialize points to 0 if undefined
-          performance: data.performance || {}, // Ensure performance is an empty object if undefined
+          points: data.points !== undefined ? data.points : 0,
+          performance: data.performance || {},
+          registrationDate: data.registrationDate || "",
+          isCurrentUser: auth.currentUser && doc.id === auth.currentUser.uid,
         };
       });
+
+      // Sort users: logged-in user first
+      usersList.sort((a, b) => (a.isCurrentUser ? -1 : 1));
+
       setUsers(usersList);
     });
 
@@ -34,64 +41,89 @@ const UserTable = () => {
     return () => unsubscribe();
   }, []);
 
-  // Helper function to get recent dates
-  const getRecentDates = () => {
+  // Get the last 7 days in descending order (today first)
+  const getLast7Days = () => {
     const today = new Date();
-    const recentDates = [];
-    for (let i = 0; i < 3; i++) {
+    const last7Days = [];
+    for (let i = 0; i < 7; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
-      recentDates.push(date.toISOString().split("T")[0]); // Format as YYYY-MM-DD
+      last7Days.push(date.toISOString().split("T")[0]); // Get YYYY-MM-DD format
     }
-    return recentDates;
+    return last7Days; // Already in descending order (today first)
   };
 
-  const recentDates = getRecentDates();
+  const last7Days = getLast7Days();
+
+  // Control the number of visible dates (default 3, show more with button)
+  const visibleDates = showAllDates ? last7Days : last7Days.slice(0, 3);
 
   const columns = [
-    { title: "Name", dataIndex: "name", key: "name" },
-
     {
-      title: "Total Points",
-      dataIndex: "points",
-      key: "points",
-      render: (points) => (points !== undefined ? points : 0), // Show 0 if points is undefined
+      title: "Date",
+      dataIndex: "date",
+      key: "date",
+      fixed: "left",
+      width: 100,
     },
-    ...recentDates.map((date) => ({
-      title: date,
-      dataIndex: date,
-      key: date,
+    ...users.map((user) => ({
+      title: (
+        <div>
+          {user.name} ({user.points}) {/* Display name with points */}
+        </div>
+      ),
+      key: user.id,
+      width: 120, // Fixed width to ensure the columns stay small
       render: (_, record) => {
-        // Safely access the points, defaulting to 0
-        const dayPoints = record.performance[date]
-          ? record.performance[date].points
-          : 0;
-        return (
+        const performance = user.performance[record.date];
+        const dayPoints = performance ? performance.points : 0;
+        const isEditableDate = record.date >= user.registrationDate;
+
+        return isEditableDate ? (
           <div
             onClick={() => {
-              if (record.uid === auth.currentUser.uid) {
-                setSelectedUser(record);
-                setSelectedDate(date);
+              if (user.uid === auth.currentUser.uid) {
+                setSelectedUser(user);
+                setSelectedDate(record.date);
                 setModalVisible(true);
               }
             }}
             style={{
-              cursor:
-                record.uid === auth.currentUser.uid ? "pointer" : "default",
+              cursor: user.uid === auth.currentUser.uid ? "pointer" : "default",
             }}
           >
-            {dayPoints !== undefined ? dayPoints : 0}
+            {dayPoints !== undefined ? dayPoints : "-"}
           </div>
+        ) : (
+          "-"
         );
       },
     })),
   ];
 
+  // Transform visible dates into table rows
+  const data = visibleDates.map((date) => ({
+    key: date,
+    date,
+  }));
+
   return (
     <div className="table-container">
-      {" "}
-      {/* Add this wrapper div */}
-      <Table columns={columns} dataSource={users} rowKey="uid" />
+      <Table
+        columns={columns}
+        dataSource={data}
+        rowKey="date"
+        pagination={false}
+        scroll={{ x: true }} // Enable horizontal scroll if needed
+      />
+      <div style={{ textAlign: "center", marginTop: "16px" }}>
+        {!showAllDates && last7Days.length > 3 && (
+          <Button onClick={() => setShowAllDates(true)}>Show More</Button>
+        )}
+        {showAllDates && (
+          <Button onClick={() => setShowAllDates(false)}>Show Less</Button>
+        )}
+      </div>
       {modalVisible && (
         <PerformanceModal
           visible={modalVisible}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Table, Radio, message } from "antd";
+import { Table, Radio } from "antd";
 import { getFirestore, doc, updateDoc, getDoc } from "firebase/firestore";
 import { app } from "./firebase.config";
+import { Modal } from "antd"; // Import Modal
 
 const db = getFirestore(app);
 
@@ -51,7 +52,7 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
           totalPoints += 1;
           break;
         case "Qaza":
-          totalPoints += 0.5;
+          totalPoints += 0;
           break;
         case "Not Prayed":
           totalPoints -= 2;
@@ -62,47 +63,42 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
     });
     return totalPoints;
   };
-  const handleSave = async () => {
-    // Calculate new points based on the updated namaz data
-    const newDayPoints = calculatePoints(namazData);
 
-    // Fetch the previous points for the selected date if they exist
+  const updateNamazData = async (updatedNamazData) => {
+    const newDayPoints = calculatePoints(updatedNamazData);
+
     const docRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(docRef);
-    let previousDayPoints = 0;
 
+    let userData = {};
     if (docSnap.exists()) {
-      const userData = docSnap.data();
-      if (userData.performance && userData.performance[selectedDate]) {
-        previousDayPoints = userData.performance[selectedDate].points || 0;
-      }
+      userData = docSnap.data();
     }
 
-    // Calculate the updated total points
-    const updatedPoints = (user.points || 0) - previousDayPoints + newDayPoints;
+    const performanceData = userData.performance || {};
+    const totalPoints = Object.values(performanceData).reduce(
+      (acc, dayPerformance) => acc + (dayPerformance.points || 0),
+      0
+    );
 
-    // Update Firestore with the new performance data and adjusted points
+    const previousDayPoints = performanceData[selectedDate]?.points || 0;
+    const updatedTotalPoints = totalPoints - previousDayPoints + newDayPoints;
+
     await updateDoc(docRef, {
-      [`performance.${selectedDate}`]: { ...namazData, points: newDayPoints },
-      points: updatedPoints,
+      [`performance.${selectedDate}`]: {
+        ...updatedNamazData,
+        points: newDayPoints,
+      },
+      points: updatedTotalPoints,
     });
-
-    onClose();
   };
 
   const handleRadioChange = (namaz, value) => {
-    if (namazData[namaz] && namazData[namaz] !== value) {
-      Modal.confirm({
-        title: "Update Confirmation",
-        content: "Do you really want to update the previous record?",
-        onOk: () => {
-          setNamazData({ ...namazData, [namaz]: value });
-          message.success("Record updated successfully.");
-        },
-      });
-    } else {
-      setNamazData({ ...namazData, [namaz]: value });
-    }
+    const updatedNamazData = { ...namazData, [namaz]: value };
+    setNamazData(updatedNamazData);
+
+    // Automatically update without modal or notification
+    updateNamazData(updatedNamazData);
   };
 
   const columns = [
@@ -165,7 +161,7 @@ const PerformanceModal = ({ visible, onClose, user, selectedDate }) => {
     <Modal
       visible={visible}
       onCancel={onClose}
-      onOk={handleSave}
+      footer={null} // Remove the OK and Cancel buttons
       title="Update Performance"
     >
       <Table columns={columns} dataSource={data} pagination={false} />
