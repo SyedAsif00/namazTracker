@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import GoogleLoginButton from "./LoginBtn";
 import UserTable from "./UserTable";
 import { auth, db } from "./firebase.config";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { Modal, Spin, DatePicker } from "antd"; // Import DatePicker here
-import moment from "moment"; // Import moment for formatting months
+import { Modal, Spin } from "antd";
+import moment from "moment";
 import AudioPlayer from "./AudioPlayer";
 import RotatingAyah from "./RotatingAyah.js";
-import "./App.css"; // Assuming styles are in this file
+import "./App.css";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import { CalendarOutlined } from "@ant-design/icons"; // Import the calendar icon
 
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState(moment()); // Track selected month
+  const [selectedMonth, setSelectedMonth] = useState(new Date()); // Initialize with JavaScript Date
+  const [calendarOpen, setCalendarOpen] = useState(false); // For controlling calendar open/close state
+  const calendarRef = useRef(null); // Ref to handle outside clicks
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -76,9 +81,30 @@ const App = () => {
 
   const handleMonthChange = (date) => {
     if (date) {
-      setSelectedMonth(date); // Update the selected month
+      setSelectedMonth(date); // Update the selected month using Date
+      setCalendarOpen(false); // Close calendar after selection
     }
   };
+
+  // Disable dates outside the current year and only show months
+  const tileDisabled = ({ date }) => {
+    const currentYear = new Date().getFullYear();
+    return date.getFullYear() !== currentYear;
+  };
+
+  // Handle clicks outside the calendar to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+        setCalendarOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <div>
@@ -101,27 +127,31 @@ const App = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              padding: "20px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center" }}>
               <h1 style={{ marginRight: "20px", padding: 0 }}>Namaz Tracker</h1>
-              {/* DatePicker next to the heading */}
-              <DatePicker
+
+              {/* Button to open the calendar */}
+              <button
+                onClick={() => setCalendarOpen(!calendarOpen)}
                 style={{
                   marginLeft: "10px",
-                  borderRadius: "5px",
-                  padding: "6px",
+                  borderRadius: "30px",
+                  padding: "8px 16px",
                   fontSize: "16px",
+                  cursor: "pointer",
+                  backgroundColor: "#1890ff", // Blue color for button
+                  color: "#fff",
+                  border: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
                 }}
-                picker="month"
-                format="MMM YYYY" // Format to display "Sep" for September
-                value={selectedMonth} // Bind to selected month state
-                onChange={handleMonthChange}
-                disabledDate={(current) =>
-                  current && current > moment().endOf("month")
-                }
-              />
+              >
+                <CalendarOutlined style={{ marginRight: "8px" }} />
+                {moment(selectedMonth).format("MMM YYYY")}
+              </button>
             </div>
             {user ? (
               <div className="user-info">
@@ -130,13 +160,13 @@ const App = () => {
                   onClick={showLogoutConfirm}
                   className="logout-button"
                   style={{
-                    backgroundColor: "#ff4d4f",
                     color: "#fff",
                     border: "none",
-                    borderRadius: "5px",
-                    padding: "8px 12px",
+                    borderRadius: "30px",
+                    padding: "8px 16px",
                     cursor: "pointer",
                     marginLeft: "20px",
+                    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
                   }}
                 >
                   Logout
@@ -148,11 +178,33 @@ const App = () => {
               </div>
             )}
           </div>
+          {/* Calendar Component */}
+          {calendarOpen && (
+            <div
+              ref={calendarRef}
+              style={{
+                position: "absolute",
+                zIndex: 1000,
+                top: "80px",
+                left: "20px",
+                boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+                borderRadius: "10px",
+                overflow: "hidden",
+              }}
+            >
+              <Calendar
+                onChange={handleMonthChange}
+                value={selectedMonth} // Pass the JavaScript Date object
+                view="year" // Only show months
+                maxDetail="year" // Limit to months only
+                tileDisabled={tileDisabled} // Disable months outside the current year
+              />
+            </div>
+          )}
           <AudioPlayer />
           <RotatingAyah />
-          {/* Always show the UserTable */}
-          <UserTable user={user} selectedMonth={selectedMonth} />{" "}
-          {/* Pass selectedMonth as prop */}
+          {/* Always show the UserTable and pass the selected month */}
+          <UserTable user={user} selectedMonth={moment(selectedMonth)} />{" "}
         </>
       )}
     </div>

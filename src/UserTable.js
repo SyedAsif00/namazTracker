@@ -5,7 +5,7 @@ import { app } from "./firebase.config";
 import PerformanceModal from "./PerformanceModal";
 import { auth } from "./firebase.config";
 import moment from "moment"; // Import moment for date handling
-
+import useSize from "./useSize";
 const db = getFirestore(app);
 
 const UserTable = ({ user, selectedMonth }) => {
@@ -15,6 +15,7 @@ const UserTable = ({ user, selectedMonth }) => {
   const [selectedDate, setSelectedDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [showAllDates, setShowAllDates] = useState(false);
+  const { isMobile } = useSize();
 
   useEffect(() => {
     const usersCollection = collection(db, "users");
@@ -43,17 +44,16 @@ const UserTable = ({ user, selectedMonth }) => {
 
   const getDaysInMonth = (month) => {
     const today = moment();
-    const startOfMonth = month.startOf("month");
-
+    const startOfMonth = month.clone().startOf("month"); // Use clone() to avoid mutating the original object
     const isCurrentMonth = month.isSame(today, "month");
-    const endOfMonth = isCurrentMonth ? today : month.endOf("month");
+    const endOfMonth = isCurrentMonth ? today : month.clone().endOf("month"); // Also clone here
 
     const days = [];
-    let day = startOfMonth;
+    let day = startOfMonth.clone(); // Clone the starting day
 
     while (day <= endOfMonth) {
       days.push(day.format("YYYY-MM-DD"));
-      day = day.add(1, "day");
+      day = day.clone().add(1, "day"); // Clone before adding to avoid mutation
     }
 
     return days.sort((a, b) => (moment(a).isBefore(moment(b)) ? 1 : -1));
@@ -71,12 +71,13 @@ const UserTable = ({ user, selectedMonth }) => {
       title: "Date",
       dataIndex: "date",
       key: "date",
-      width: 100,
+      width: isMobile ? 25 : 40,
       fixed: "left", // Fix this column to the left
       render: (text) => (
         <strong>{moment(text).format("D MMM YYYY")}</strong> // Format the date and make it bold
       ),
     },
+
     ...users.map((user) => ({
       title: (
         <div>
@@ -84,7 +85,7 @@ const UserTable = ({ user, selectedMonth }) => {
         </div>
       ),
       key: user.id,
-      width: 120,
+      width: isMobile ? 50 : 120,
       render: (_, record) => {
         const performance = user.performance[record.date];
         const dayPoints = performance ? performance.points : 0;

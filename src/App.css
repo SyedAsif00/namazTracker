@@ -111,10 +111,16 @@ h1 {
   max-width: 90%; /* Limit the max width of the table */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
 }
+.date-column {
+  width: 30px;
+}
 @media (max-width: 580px) {
   .table-container {
     max-width: 100%;
     padding: 0;
+  }
+  .date-column {
+    width: 38px;
   }
 }
 .ant-table {
