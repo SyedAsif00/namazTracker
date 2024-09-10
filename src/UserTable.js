@@ -17,7 +17,6 @@ const UserTable = () => {
   useEffect(() => {
     const usersCollection = collection(db, "users");
 
-    // Real-time listener for users collection
     const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
       const usersList = snapshot.docs.map((doc) => {
         const data = doc.data();
@@ -31,17 +30,14 @@ const UserTable = () => {
         };
       });
 
-      // Sort users: logged-in user first
       usersList.sort((a, b) => (a.isCurrentUser ? -1 : 1));
 
       setUsers(usersList);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
-  // Get the last 7 days in descending order (today first)
   const getLast7Days = () => {
     const today = new Date();
     const last7Days = [];
@@ -55,7 +51,6 @@ const UserTable = () => {
 
   const last7Days = getLast7Days();
 
-  // Control the number of visible dates (default 3, show more with button)
   const visibleDates = showAllDates ? last7Days : last7Days.slice(0, 3);
 
   const columns = [
@@ -69,11 +64,11 @@ const UserTable = () => {
     ...users.map((user) => ({
       title: (
         <div>
-          {user.name} ({user.points}) {/* Display name with points */}
+          {user.name} ({user.points})
         </div>
       ),
       key: user.id,
-      width: 120, // Fixed width to ensure the columns stay small
+      width: 120,
       render: (_, record) => {
         const performance = user.performance[record.date];
         const dayPoints = performance ? performance.points : 0;
